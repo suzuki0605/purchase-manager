@@ -291,6 +291,9 @@ function buildDetailHTML(item) {
             </div>`).join('')}
         </div>
         <button class="add-usage-btn">＋ 使用感を追加する</button>
+      </div>
+      <div class="detail-bottom-btns">
+        <button class="edit-btn" data-id="${item.id}">編集</button>
       </div>`;
   } else {
     html += `
@@ -394,7 +397,7 @@ function openForm(item, defaultType) {
   const body  = document.getElementById('formBody');
   document.getElementById('formTitle').textContent = item ? 'アイテムを編集' : 'アイテムを追加';
   body.innerHTML = buildFormHTML(item, defaultType);
-  bindFormEvents(item);
+  bindFormEvents(item, defaultType);
   panel.classList.remove('hidden');
   requestAnimationFrame(() => panel.classList.add('open'));
 }
@@ -476,10 +479,10 @@ function buildFormHTML(item, defaultType) {
     <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;margin-bottom:32px;border-radius:12px;font-size:15px;">保存</button>`;
 }
 
-function bindFormEvents(existingItem) {
+function bindFormEvents(existingItem, defaultType) {
   const body = document.getElementById('formBody');
   let imageData = existingItem ? existingItem.image || null : null;
-  let currentType = existingItem ? existingItem.type : 'consideration';
+  let currentType = existingItem ? existingItem.type : (defaultType || 'consideration');
   let starValue = existingItem ? (currentType === 'consideration' ? existingItem.priority || 0 : existingItem.frequency || 0) : 0;
 
   // Image upload → crop
