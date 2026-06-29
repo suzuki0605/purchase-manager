@@ -412,6 +412,7 @@ function openForm(item, defaultType) {
 
 function closeForm() {
   const panel = document.getElementById('formPanel');
+  if (panel._vpCleanup) panel._vpCleanup();
   panel.classList.remove('open');
   setTimeout(() => panel.classList.add('hidden'), 280);
 }
@@ -484,7 +485,7 @@ function buildFormHTML(item, defaultType) {
       <div class="stars" id="formStars" data-value="${item ? (type === 'consideration' ? item.priority || 0 : item.frequency || 0) : 0}"></div>
     </div>
 
-    <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;margin-bottom:32px;border-radius:12px;font-size:15px;">保存</button>`;
+    <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;margin-bottom:64px;border-radius:12px;font-size:15px;">保存</button>`;
 }
 
 function bindFormEvents(existingItem, defaultType) {
@@ -558,20 +559,23 @@ function bindFormEvents(existingItem, defaultType) {
     setTimeout(() => suggestionBox.classList.add('hidden'), 150);
   });
 
-  // visualViewport でキーボード高さ分だけパネルを縮める
+  // visualViewport でテキスト入力時のみキーボード高さ分パネルを縮める
   const formPanel = document.getElementById('formPanel');
+  const TEXT_TYPES = ['text','number','email','tel','search','url','password'];
   function onViewportResize() {
+    const active = document.activeElement;
+    const isText = active && (TEXT_TYPES.includes(active.type) || active.tagName === 'TEXTAREA');
     const keyboardH = window.innerHeight - window.visualViewport.height;
-    formPanel.style.paddingBottom = keyboardH > 0 ? keyboardH + 'px' : '';
+    formPanel.style.paddingBottom = (isText && keyboardH > 0) ? keyboardH + 'px' : '';
   }
-  window.visualViewport.addEventListener('resize', onViewportResize);
-  // パネルを閉じたときにリスナー解除・リセット
-  formPanel.addEventListener('transitionend', () => {
-    if (!formPanel.classList.contains('open')) {
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    formPanel._vpCleanup = () => {
       formPanel.style.paddingBottom = '';
       window.visualViewport.removeEventListener('resize', onViewportResize);
-    }
-  }, { once: true });
+      delete formPanel._vpCleanup;
+    };
+  }
 
   // Type toggle
   body.querySelectorAll('.type-btn').forEach(btn => {
