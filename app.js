@@ -293,7 +293,11 @@ function buildDetailHTML(item) {
         <button class="add-usage-btn">＋ 使用感を追加する</button>
       </div>`;
   } else {
-    html += `<button class="purchase-btn" data-id="${item.id}">購入した</button>`;
+    html += `
+      <div class="detail-bottom-btns">
+        <button class="edit-btn" data-id="${item.id}">編集</button>
+        <button class="purchase-btn" data-id="${item.id}">購入した</button>
+      </div>`;
   }
 
   return html;
@@ -330,6 +334,17 @@ function showUsageForm(item) {
     refreshAll();
   });
 }
+
+// Edit button (event delegation)
+document.getElementById('detailBody').addEventListener('click', e => {
+  const btn = e.target.closest('.edit-btn');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const item = DB.items.find(i => i.id === id);
+  if (!item) return;
+  closeDetail();
+  setTimeout(() => openForm(item, item.type), 300);
+});
 
 // Purchase button (event delegation)
 document.getElementById('detailBody').addEventListener('click', e => {
