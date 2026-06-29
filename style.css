@@ -262,6 +262,17 @@ body {
   font-size: 14px;
 }
 
+
+.month-divider {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 16px 4px 6px;
+  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: 4px;
+}
+
 /* ===== FAB ===== */
 .fab {
   position: fixed;

@@ -182,7 +182,19 @@ function renderGrid(tabKey) {
     return;
   }
 
+  let _monthKey = null;
   items.forEach(item => {
+    if (tabKey === 'purchased' && item.date) {
+      const [y, m] = item.date.split('-');
+      const mk = y + '-' + m;
+      if (mk !== _monthKey) {
+        _monthKey = mk;
+        const divider = document.createElement('div');
+        divider.className = 'month-divider';
+        divider.textContent = y + '年' + parseInt(m) + '月の購入';
+        grid.appendChild(divider);
+      }
+    }
     const card = document.createElement('div');
     card.className = 'item-card';
     const _imgSrc = getImageSrc(item);
@@ -1327,6 +1339,36 @@ document.getElementById('cropCancelBtn').addEventListener('click', () => {
     if (dx > 80 && dy < dx * 0.6 && lastDetailId) {
       openDetail(lastDetailId);
     }
+  }, { passive: true });
+
+  // メイン画面の中央エリアで左右スワイプしてタブ切り替え
+  const TABS = ['consideration', 'purchased', 'calendar'];
+  let tabStartX = 0, tabStartY = 0, tabTracking = false;
+  mainContent.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    // 左端30px（パネル閉じる）・右端30px（進む）は除外
+    if (t.clientX < 30 || t.clientX > screenW() - 30) return;
+    if (detailPanel.classList.contains('open') || formPanel.classList.contains('open')) return;
+    tabStartX = t.clientX;
+    tabStartY = t.clientY;
+    tabTracking = true;
+  }, { passive: true });
+  mainContent.addEventListener('touchend', e => {
+    if (!tabTracking) return;
+    tabTracking = false;
+    const dx = e.changedTouches[0].clientX - tabStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - tabStartY);
+    if (Math.abs(dx) < 60 || dy > Math.abs(dx) * 0.5) return;
+    const cur = TABS.indexOf(state.activeTab);
+    const next = dx < 0 ? Math.min(cur + 1, TABS.length - 1) : Math.max(cur - 1, 0);
+    if (next === cur) return;
+    const nextTab = TABS[next];
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    document.querySelector('.tab-btn[data-tab="' + nextTab + '"]').classList.add('active');
+    document.getElementById('tab-' + nextTab).classList.add('active');
+    state.activeTab = nextTab;
+    if (nextTab === 'calendar') renderCalendar();
   }, { passive: true });
 })();
 
