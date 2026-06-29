@@ -243,6 +243,7 @@ function openDetail(id) {
   }
 
   panel.classList.remove('hidden');
+  body.scrollTop = 0;
   requestAnimationFrame(() => panel.classList.add('open'));
   document.getElementById('detailOverlay').classList.remove('hidden');
 }
@@ -399,6 +400,7 @@ function openForm(item, defaultType) {
   body.innerHTML = buildFormHTML(item, defaultType);
   bindFormEvents(item, defaultType);
   panel.classList.remove('hidden');
+  body.scrollTop = 0;
   requestAnimationFrame(() => panel.classList.add('open'));
 }
 
