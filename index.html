@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>購入管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h1 class="header-title" id="headerTitle">購入管理</h1>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="consideration">検討リスト</button>
+    <button class="tab-btn" data-tab="purchased">購入リスト</button>
+    <button class="tab-btn" data-tab="calendar">カレンダー</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- 検討リスト -->
+    <section class="tab-content active" id="tab-consideration">
+      <div class="filter-bar">
+        <div class="category-chips" id="considerationChips"></div>
+        <div class="filter-sort-row">
+          <button class="period-btn" data-target="consideration">期間指定</button>
+          <select class="sort-select" id="considerationSort">
+            <option value="date-desc">追加日 新しい順</option>
+            <option value="date-asc">追加日 古い順</option>
+            <option value="priority-desc">優先度 高い順</option>
+            <option value="priority-asc">優先度 低い順</option>
+          </select>
+        </div>
+        <div class="period-indicator hidden" id="considerationPeriodIndicator">
+          <span id="considerationPeriodText"></span>
+          <button class="period-clear" data-target="consideration">×</button>
+        </div>
+      </div>
+      <div class="item-grid" id="considerationGrid"></div>
+    </section>
+
+    <!-- 購入リスト -->
+    <section class="tab-content" id="tab-purchased">
+      <div class="filter-bar">
+        <div class="category-chips" id="purchasedChips"></div>
+        <div class="filter-sort-row">
+          <button class="period-btn" data-target="purchased">期間指定</button>
+          <select class="sort-select" id="purchasedSort">
+            <option value="date-desc">購入日 新しい順</option>
+            <option value="date-asc">購入日 古い順</option>
+            <option value="freq-desc">使用頻度 高い順</option>
+            <option value="freq-asc">使用頻度 低い順</option>
+          </select>
+        </div>
+        <div class="period-indicator hidden" id="purchasedPeriodIndicator">
+          <span id="purchasedPeriodText"></span>
+          <button class="period-clear" data-target="purchased">×</button>
+        </div>
+      </div>
+      <div class="item-grid" id="purchasedGrid"></div>
+    </section>
+
+    <!-- カレンダー -->
+    <section class="tab-content" id="tab-calendar">
+      <div class="calendar-header">
+        <button class="cal-nav" id="prevMonth">‹</button>
+        <span class="cal-month" id="calMonth"></span>
+        <button class="cal-nav" id="nextMonth">›</button>
+      </div>
+      <div class="cal-total">月合計 <span id="calTotalAmount">¥0</span></div>
+      <div class="calendar-weekdays">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </section>
+
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" id="fabBtn">+</button>
+
+  <!-- Detail Panel -->
+  <div class="overlay hidden" id="detailOverlay"></div>
+  <div class="panel hidden" id="detailPanel">
+    <div class="panel-header">
+      <button class="back-btn" id="detailBackBtn">←</button>
+      <h2 class="panel-title" id="detailTitle"></h2>
+      <button class="icon-btn" id="detailDeleteBtn">削除</button>
+    </div>
+    <div class="panel-body" id="detailBody"></div>
+  </div>
+
+  <!-- Form Panel -->
+  <div class="panel hidden" id="formPanel">
+    <div class="panel-header">
+      <button class="back-btn" id="formBackBtn">←</button>
+      <h2 class="panel-title" id="formTitle">アイテムを追加</h2>
+      <button class="save-btn" id="formSaveBtn">保存</button>
+    </div>
+    <div class="panel-body" id="formBody"></div>
+  </div>
+
+  <!-- 期間指定モーダル -->
+  <div class="modal-overlay hidden" id="periodModalOverlay">
+    <div class="modal">
+      <h3 class="modal-title">期間を指定</h3>
+      <div class="modal-field">
+        <label>開始日</label>
+        <input type="date" id="periodStart">
+      </div>
+      <div class="modal-field">
+        <label>終了日</label>
+        <input type="date" id="periodEnd">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="periodCancelBtn">キャンセル</button>
+        <button class="btn-primary" id="periodApplyBtn">適用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- カレンダー日付詳細モーダル -->
+  <div class="modal-overlay hidden" id="calDayOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="calDayTitle"></h3>
+        <button class="modal-close" id="calDayClose">×</button>
+      </div>
+      <div id="calDayList"></div>
+    </div>
+  </div>
+
+  <!-- カテゴリ管理モーダル -->
+  <div class="modal-overlay hidden" id="categoryModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">カテゴリ管理</h3>
+        <button class="modal-close" id="categoryModalClose">×</button>
+      </div>
+      <div id="categoryModalList"></div>
+      <div class="modal-add-row">
+        <input type="text" id="newCategoryInput" placeholder="新しいカテゴリ名">
+        <button class="btn-primary" id="addCategoryBtn">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
