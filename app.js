@@ -112,7 +112,10 @@ function renderGrid(tabKey) {
       ? `<img class="card-img" src="${item.image}" alt="">`
       : `<div class="card-img-placeholder">📦</div>`;
     card.innerHTML = `
-      ${imgHtml}
+      <div class="card-img-wrapper">
+        ${imgHtml}
+        ${item.category ? `<span class="card-category-badge">${item.category}</span>` : ''}
+      </div>
       <div class="card-body">
         <div class="card-seller">${item.seller || '　'}</div>
         <div class="card-name">${item.name || '　'}</div>
@@ -245,7 +248,7 @@ function openDetail(id) {
 }
 
 function buildDetailHTML(item) {
-  const imgHtml = item.image
+  const imgInner = item.image
     ? `<img class="detail-img" src="${item.image}" alt="">`
     : `<div class="detail-img-placeholder">📦</div>`;
 
@@ -258,8 +261,10 @@ function buildDetailHTML(item) {
   const dateLabel   = isConsideration ? '追加日' : '購入日';
 
   let html = `
-    ${imgHtml}
-    ${item.category ? `<div class="detail-category-badge">${item.category}</div>` : ''}
+    <div class="detail-img-wrapper">
+      ${imgInner}
+      ${item.category ? `<span class="detail-category-overlay">${item.category}</span>` : ''}
+    </div>`;
     <div class="detail-seller">${item.seller || ''}</div>
     <div class="detail-name">${item.name || ''}</div>
     <div class="detail-price">${formatPrice(item.price)}</div>
