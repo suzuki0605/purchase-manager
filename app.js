@@ -1069,5 +1069,67 @@ document.getElementById('cropCancelBtn').addEventListener('click', () => {
   document.getElementById('cropModalOverlay').classList.add('hidden');
 });
 
+// ===== Swipe Gestures =====
+(function setupSwipe() {
+  let lastDetailId = null; // 最後に開いた詳細アイテムのID
+
+  // 詳細パネルが開かれたときにIDを記録
+  const origOpenDetail = window.openDetail;
+  const detailPanel = document.getElementById('detailPanel');
+  const formPanel   = document.getElementById('formPanel');
+  const mainContent = document.querySelector('.main-content');
+
+  // パネル上の右スワイプで閉じる
+  function addSwipeBack(panel, closeFn) {
+    let startX = 0, startY = 0, tracking = false;
+    panel.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      if (t.clientX > 30) return; // 左端30px以内のみ
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    }, { passive: true });
+    panel.addEventListener('touchmove', e => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > 10 && dy < dx) e.preventDefault(); // 水平スワイプ中はスクロール抑制
+    }, { passive: false });
+    panel.addEventListener('touchend', e => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY);
+      if (dx > 80 && dy < dx * 0.6) closeFn();
+    }, { passive: true });
+  }
+
+  addSwipeBack(detailPanel, () => {
+    lastDetailId = state.openDetail;
+    closeDetail();
+  });
+  addSwipeBack(formPanel, () => closeForm());
+
+  // メイン画面の右端から左スワイプで詳細を再表示（進む）
+  let fwdStartX = 0, fwdStartY = 0, fwdTracking = false;
+  const screenW = () => window.innerWidth;
+  mainContent.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (t.clientX < screenW() - 30) return; // 右端30px以内のみ
+    fwdStartX = t.clientX;
+    fwdStartY = t.clientY;
+    fwdTracking = true;
+  }, { passive: true });
+  mainContent.addEventListener('touchend', e => {
+    if (!fwdTracking) return;
+    fwdTracking = false;
+    const dx = fwdStartX - e.changedTouches[0].clientX; // 左方向なのでfwdStartX - endX
+    const dy = Math.abs(e.changedTouches[0].clientY - fwdStartY);
+    if (dx > 80 && dy < dx * 0.6 && lastDetailId) {
+      openDetail(lastDetailId);
+    }
+  }, { passive: true });
+})();
+
 // ===== Init =====
 refreshAll();
