@@ -1,4 +1,4 @@
-// ===== API Client =====
+﻿// ===== API Client =====
 async function apiFetch(path, options = {}) {
   const res = await fetch('/api/' + path, options);
   if (!res.ok) throw new Error(await res.text());
@@ -51,9 +51,24 @@ async function syncItemChanges(prev, next) {
     if (!prevMap.has(id)) {
       await syncNewItem(item);
     } else if (JSON.stringify(prevMap.get(id)) !== JSON.stringify(item)) {
-      api.putItem(id, item).catch(console.error);
+      syncUpdatedItem(item);
     }
   }
+}
+
+async function syncUpdatedItem(item) {
+  let apiItem = { ...item };
+  if (item.image && item.image.startsWith('data:')) {
+    try {
+      const match = item.image.match(/^data:(image\/\w+);base64,/);
+      const mimeType = match ? match[1] : 'image/jpeg';
+      const { key } = await api.uploadImage(item.image, mimeType);
+      apiItem = { ...apiItem, image_key: key, image: undefined };
+      const idx = _items.findIndex(i => i.id === item.id);
+      if (idx !== -1) _items[idx] = { ..._items[idx], image_key: key, image: undefined };
+    } catch (e) { console.error('画像アップロード失敗:', e); }
+  }
+  api.putItem(item.id, apiItem).catch(console.error);
 }
 
 async function syncNewItem(item) {
@@ -549,6 +564,7 @@ function buildFormHTML(item, defaultType) {
 function bindFormEvents(existingItem, defaultType) {
   const body = document.getElementById('formBody');
   let imageData = existingItem ? existingItem.image || null : null;
+  let imageKey  = existingItem ? existingItem.image_key || null : null;
   let currentType = existingItem ? existingItem.type : (defaultType || 'consideration');
   let starValue = existingItem ? (currentType === 'consideration' ? existingItem.priority || 0 : existingItem.frequency || 0) : 0;
 
@@ -560,6 +576,7 @@ function bindFormEvents(existingItem, defaultType) {
     reader.onload = ev => {
       openCropModal(ev.target.result, croppedData => {
         imageData = croppedData;
+        imageKey = null;
         setUploadAreaImage(imageData);
       });
     };
@@ -569,6 +586,7 @@ function bindFormEvents(existingItem, defaultType) {
   // 再トリミング時にimageDataを更新
   document.getElementById('imgUploadArea').addEventListener('imageUpdated', e => {
     imageData = e.detail;
+    imageKey = null;
   });
 
   // 日付表示の同期
@@ -669,11 +687,11 @@ function bindFormEvents(existingItem, defaultType) {
     if (existingItem) {
       const idx = items.findIndex(i => i.id === existingItem.id);
       if (idx !== -1) {
-        items[idx] = buildItemFromForm(existingItem.id, currentType, imageData, starValue);
+        items[idx] = buildItemFromForm(existingItem.id, currentType, imageData, imageKey, starValue);
         DB.items = items;
       }
     } else {
-      const newItem = buildItemFromForm(genId(), currentType, imageData, starValue);
+      const newItem = buildItemFromForm(genId(), currentType, imageData, null, starValue);
       items.push(newItem);
       DB.items = items;
     }
@@ -683,12 +701,13 @@ function bindFormEvents(existingItem, defaultType) {
   });
 }
 
-function buildItemFromForm(id, type, imageData, starValue) {
+function buildItemFromForm(id, type, imageData, imageKey, starValue) {
   const cat = document.getElementById('formCategory').value;
   return {
     id,
     type,
     image: imageData,
+    image_key: imageKey || null,
     category: cat || null,
     seller: document.getElementById('formSeller').value.trim(),
     name: document.getElementById('formName').value.trim(),
