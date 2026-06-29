@@ -1050,17 +1050,27 @@ document.getElementById('cropConfirmBtn').addEventListener('click', () => {
   const frameSize = crop.frameSize;
   const fx = (crop.stageW - frameSize) / 2;
   const fy = (crop.stageH - frameSize) / 2;
+
+  // 元画像上のトリミング領域を計算
+  const srcX    = (fx - crop.x) / crop.scale;
+  const srcY    = (fy - crop.y) / crop.scale;
+  const srcSize = frameSize / crop.scale;
+
+  const OUTPUT = 800;
   const out = document.createElement('canvas');
-  out.width = 600; out.height = 600;
+  out.width = OUTPUT; out.height = OUTPUT;
   const ctx = out.getContext('2d');
   ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, 600, 600);
-  ctx.drawImage(
-    document.getElementById('cropCanvas'),
-    fx, fy, frameSize, frameSize,
-    0, 0, 600, 600
-  );
-  const data = out.toDataURL('image/jpeg', 0.88);
+  ctx.fillRect(0, 0, OUTPUT, OUTPUT);
+  // 表示キャンバスではなく元画像から直接描画
+  ctx.drawImage(crop.img, srcX, srcY, srcSize, srcSize, 0, 0, OUTPUT, OUTPUT);
+
+  // WebP対応なら使用（同画質でファイルサイズ小）、非対応はJPEG
+  const testCanvas = document.createElement('canvas');
+  const supportsWebP = testCanvas.toDataURL('image/webp').startsWith('data:image/webp');
+  const fmt = supportsWebP ? 'image/webp' : 'image/jpeg';
+  const data = out.toDataURL(fmt, 0.92);
+
   document.getElementById('cropModalOverlay').classList.add('hidden');
   if (cropCallback) cropCallback(data);
 });
