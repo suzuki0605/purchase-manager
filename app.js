@@ -364,13 +364,16 @@ document.getElementById('detailBackBtn').addEventListener('click', closeDetail);
 document.getElementById('detailOverlay').addEventListener('click', closeDetail);
 
 // ===== Form Panel =====
-document.getElementById('fabBtn').addEventListener('click', () => openForm(null));
+document.getElementById('fabBtn').addEventListener('click', () => {
+  const defaultType = state.activeTab === 'purchased' ? 'purchased' : 'consideration';
+  openForm(null, defaultType);
+});
 
-function openForm(item) {
+function openForm(item, defaultType) {
   const panel = document.getElementById('formPanel');
   const body  = document.getElementById('formBody');
   document.getElementById('formTitle').textContent = item ? 'アイテムを編集' : 'アイテムを追加';
-  body.innerHTML = buildFormHTML(item);
+  body.innerHTML = buildFormHTML(item, defaultType);
   bindFormEvents(item);
   panel.classList.remove('hidden');
   requestAnimationFrame(() => panel.classList.add('open'));
@@ -384,9 +387,9 @@ function closeForm() {
 
 document.getElementById('formBackBtn').addEventListener('click', closeForm);
 
-function buildFormHTML(item) {
+function buildFormHTML(item, defaultType) {
   const cats = DB.categories;
-  const type = item ? item.type : 'consideration';
+  const type = item ? item.type : (defaultType || 'consideration');
   const catOptions = cats.map(c => `<option value="${c}" ${item && item.category === c ? 'selected' : ''}>${c}</option>`).join('');
 
   return `
