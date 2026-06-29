@@ -493,6 +493,22 @@ body {
   cursor: pointer;
 }
 
+/* 購入リスト詳細の編集ボタン（add-usage-btnに合わせる） */
+.purchased-edit-btns {
+  margin-top: 0;
+}
+.purchased-edit-btns .edit-btn {
+  flex: 1;
+  width: 100%;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: normal;
+  background: none;
+  color: var(--text-secondary);
+  border: 1.5px dashed var(--border);
+  margin-top: 12px;
+}
+
 .purchase-btn {
   flex: 1;
 }

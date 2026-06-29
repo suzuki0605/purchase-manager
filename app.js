@@ -292,7 +292,7 @@ function buildDetailHTML(item) {
         </div>
         <button class="add-usage-btn">＋ 使用感を追加する</button>
       </div>
-      <div class="detail-bottom-btns">
+      <div class="detail-bottom-btns purchased-edit-btns">
         <button class="edit-btn" data-id="${item.id}">編集</button>
       </div>`;
   } else {
@@ -513,7 +513,12 @@ function bindFormEvents(existingItem, defaultType) {
   // 販売元サジェスト（カスタム）
   const sellerInput = document.getElementById('formSeller');
   const suggestionBox = document.getElementById('sellerSuggestions');
-  const allSellers = [...new Set(DB.items.map(i => i.seller).filter(Boolean))];
+  const allSellers = [...new Map(
+    [...DB.items]
+      .filter(i => i.seller)
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+      .map(i => [i.seller, i.seller])
+  ).values()];
 
   function showSuggestions(val) {
     const q = val.trim().toLowerCase();
