@@ -706,52 +706,137 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   renderCalendar();
 });
 
-// ===== Crop Modal =====
-let cropperInstance = null;
+// ===== Crop Modal (Instagram style) =====
 let cropCallback = null;
+const crop = {
+  img: new Image(),
+  x: 0, y: 0, scale: 1,
+  frameSize: 0,
+  stageW: 0, stageH: 0,
+  dragging: false,
+  lastX: 0, lastY: 0,
+  pinchDist: 0,
+};
 
 function openCropModal(imageSrc, callback) {
   cropCallback = callback;
-  const overlay = document.getElementById('cropModalOverlay');
-  const img = document.getElementById('cropImage');
-  img.src = imageSrc;
-  overlay.classList.remove('hidden');
+  document.getElementById('cropModalOverlay').classList.remove('hidden');
 
-  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
-  cropperInstance = new Cropper(img, {
-    aspectRatio: 1,
-    viewMode: 1,
-    autoCropArea: 0.9,
-  });
+  crop.img = new Image();
+  crop.img.onload = () => {
+    const stage = document.getElementById('cropStage');
+    const canvas = document.getElementById('cropCanvas');
+    crop.stageW = stage.clientWidth;
+    crop.stageH = stage.clientHeight;
+    canvas.width  = crop.stageW;
+    canvas.height = crop.stageH;
 
-  // ratio buttons
-  document.querySelectorAll('.ratio-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.ratio === '1') btn.classList.add('active');
-  });
+    crop.frameSize = Math.min(crop.stageW, crop.stageH) * 0.85;
+    const frame = document.getElementById('cropFrame');
+    const fx = (crop.stageW - crop.frameSize) / 2;
+    const fy = (crop.stageH - crop.frameSize) / 2;
+    frame.style.left   = fx + 'px';
+    frame.style.top    = fy + 'px';
+    frame.style.width  = crop.frameSize + 'px';
+    frame.style.height = crop.frameSize + 'px';
+
+    // fit image to fill frame
+    const fitScale = Math.max(crop.frameSize / crop.img.width, crop.frameSize / crop.img.height);
+    crop.scale = fitScale;
+    crop.x = (crop.stageW - crop.img.width * crop.scale) / 2;
+    crop.y = (crop.stageH - crop.img.height * crop.scale) / 2;
+    drawCrop();
+  };
+  crop.img.src = imageSrc;
 }
 
-document.querySelectorAll('.ratio-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const ratio = btn.dataset.ratio === '0' ? NaN : Number(btn.dataset.ratio);
-    if (cropperInstance) cropperInstance.setAspectRatio(ratio);
-  });
+function drawCrop() {
+  const canvas = document.getElementById('cropCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(crop.img, crop.x, crop.y, crop.img.width * crop.scale, crop.img.height * crop.scale);
+}
+
+// Touch events
+const cropStage = document.getElementById('cropStage');
+
+cropStage.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    crop.dragging = true;
+    crop.lastX = e.touches[0].clientX;
+    crop.lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    crop.pinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}, { passive: false });
+
+cropStage.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && crop.dragging) {
+    const dx = e.touches[0].clientX - crop.lastX;
+    const dy = e.touches[0].clientY - crop.lastY;
+    crop.x += dx; crop.y += dy;
+    crop.lastX = e.touches[0].clientX;
+    crop.lastY = e.touches[0].clientY;
+    drawCrop();
+  } else if (e.touches.length === 2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const ratio = dist / crop.pinchDist;
+    const minScale = Math.max(crop.frameSize / crop.img.width, crop.frameSize / crop.img.height);
+    crop.scale = Math.max(minScale, Math.min(crop.scale * ratio, minScale * 6));
+    crop.pinchDist = dist;
+    drawCrop();
+  }
+}, { passive: false });
+
+cropStage.addEventListener('touchend', () => { crop.dragging = false; });
+
+// Mouse events (PC用)
+cropStage.addEventListener('mousedown', e => {
+  crop.dragging = true;
+  crop.lastX = e.clientX; crop.lastY = e.clientY;
 });
+cropStage.addEventListener('mousemove', e => {
+  if (!crop.dragging) return;
+  crop.x += e.clientX - crop.lastX;
+  crop.y += e.clientY - crop.lastY;
+  crop.lastX = e.clientX; crop.lastY = e.clientY;
+  drawCrop();
+});
+cropStage.addEventListener('mouseup', () => { crop.dragging = false; });
+cropStage.addEventListener('wheel', e => {
+  e.preventDefault();
+  const minScale = Math.max(crop.frameSize / crop.img.width, crop.frameSize / crop.img.height);
+  crop.scale = Math.max(minScale, Math.min(crop.scale * (e.deltaY > 0 ? 0.9 : 1.1), minScale * 6));
+  drawCrop();
+}, { passive: false });
 
 document.getElementById('cropConfirmBtn').addEventListener('click', () => {
-  if (!cropperInstance) return;
-  const canvas = cropperInstance.getCroppedCanvas({ maxWidth: 800, maxHeight: 800 });
-  const data = canvas.toDataURL('image/jpeg', 0.85);
-  cropperInstance.destroy();
-  cropperInstance = null;
+  const frameSize = crop.frameSize;
+  const fx = (crop.stageW - frameSize) / 2;
+  const fy = (crop.stageH - frameSize) / 2;
+  const out = document.createElement('canvas');
+  out.width = 600; out.height = 600;
+  const ctx = out.getContext('2d');
+  ctx.drawImage(
+    document.getElementById('cropCanvas'),
+    fx, fy, frameSize, frameSize,
+    0, 0, 600, 600
+  );
+  const data = out.toDataURL('image/jpeg', 0.88);
   document.getElementById('cropModalOverlay').classList.add('hidden');
   if (cropCallback) cropCallback(data);
 });
 
 document.getElementById('cropCancelBtn').addEventListener('click', () => {
-  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
   document.getElementById('cropModalOverlay').classList.add('hidden');
 });
 
