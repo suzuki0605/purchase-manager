@@ -1341,3 +1341,28 @@ async function initApp() {
 }
 
 initApp();
+
+// 30秒ポーリング：他デバイスの変更を自動反映
+async function pollUpdates() {
+  if (!_initialized) return;
+  if (document.hidden) return;
+  // フォームや詳細パネルが開いている間はスキップ（入力を邪魔しない）
+  const formOpen   = document.getElementById('formPanel')?.classList.contains('open');
+  const detailOpen = document.getElementById('detailPanel')?.classList.contains('open');
+  if (formOpen || detailOpen) return;
+
+  try {
+    const [items, cats] = await Promise.all([api.getItems(), api.getCategories()]);
+    if (JSON.stringify(items) !== JSON.stringify(_items)) {
+      _items = items;
+      _categories = cats;
+      refreshAll();
+    }
+  } catch (e) { /* ポーリング失敗は無視 */ }
+}
+
+setInterval(pollUpdates, 30000);
+// タブがアクティブになった瞬間も即チェック
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pollUpdates();
+});
