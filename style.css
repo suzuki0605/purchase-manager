@@ -673,6 +673,36 @@ body {
   cursor: pointer;
 }
 
+/* Autocomplete */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 999;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: 12px 14px;
+  font-size: 15px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:active { background: var(--bg); }
+
 /* Category select with manage button */
 .form-select-row {
   display: flex;

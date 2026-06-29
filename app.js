@@ -424,7 +424,10 @@ function buildFormHTML(item, defaultType) {
 
     <div class="form-field">
       <label class="form-label" id="formSellerLabel">${type === 'consideration' ? '販売元' : '購入元'}</label>
-      <input type="text" class="form-input" id="formSeller" list="sellerDatalist" placeholder="例：Amazon、無印良品" value="${item ? item.seller || '' : ''}" autocomplete="off">
+      <div class="autocomplete-wrapper">
+        <input type="text" class="form-input" id="formSeller" placeholder="例：Amazon、無印良品" value="${item ? item.seller || '' : ''}" autocomplete="off">
+        <div class="autocomplete-list hidden" id="sellerSuggestions"></div>
+      </div>
     </div>
 
     <div class="form-field">
@@ -489,10 +492,40 @@ function bindFormEvents(existingItem) {
     document.getElementById('formDateDisplay').textContent = val ? val.replace(/-/g, '/') : '日付を選択';
   });
 
-  // 販売元サジェスト（過去の登録から）
-  const datalist = document.getElementById('sellerDatalist');
-  const sellers = [...new Set(DB.items.map(i => i.seller).filter(Boolean))];
-  datalist.innerHTML = sellers.map(s => `<option value="${s}">`).join('');
+  // 販売元サジェスト（カスタム）
+  const sellerInput = document.getElementById('formSeller');
+  const suggestionBox = document.getElementById('sellerSuggestions');
+  const allSellers = [...new Set(DB.items.map(i => i.seller).filter(Boolean))];
+
+  function showSuggestions(val) {
+    const q = val.trim().toLowerCase();
+    const matches = q
+      ? allSellers.filter(s => s.toLowerCase().includes(q))
+      : allSellers;
+    if (matches.length === 0) { suggestionBox.classList.add('hidden'); return; }
+    suggestionBox.innerHTML = matches.map(s =>
+      `<div class="autocomplete-item">${s}</div>`
+    ).join('');
+    suggestionBox.classList.remove('hidden');
+    suggestionBox.querySelectorAll('.autocomplete-item').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        sellerInput.value = el.textContent;
+        suggestionBox.classList.add('hidden');
+      });
+      el.addEventListener('touchend', e => {
+        e.preventDefault();
+        sellerInput.value = el.textContent;
+        suggestionBox.classList.add('hidden');
+      });
+    });
+  }
+
+  sellerInput.addEventListener('input', () => showSuggestions(sellerInput.value));
+  sellerInput.addEventListener('focus', () => showSuggestions(sellerInput.value));
+  sellerInput.addEventListener('blur', () => {
+    setTimeout(() => suggestionBox.classList.add('hidden'), 150);
+  });
 
   // キーボード確定後のスクロール位置保持
   const formBody = document.getElementById('formBody');
