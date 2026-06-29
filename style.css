@@ -502,10 +502,6 @@ body {
   width: 100%;
   padding: 12px;
   font-size: 13px;
-  font-weight: normal;
-  background: none;
-  color: var(--text-secondary);
-  border: 1.5px dashed var(--border);
   margin-top: 12px;
 }
 
