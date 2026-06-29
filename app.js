@@ -27,10 +27,10 @@ function getImageSrc(item) {
 }
 
 const DB = {
-  get items() { return _items; },
+  get items() { return JSON.parse(JSON.stringify(_items)); }, // ディープコピーで返す
   set items(newItems) {
     if (!_initialized) { _items = newItems; return; }
-    const prev = _items;
+    const prev = JSON.parse(JSON.stringify(_items)); // 変更前のスナップショット
     _items = newItems;
     syncItemChanges(prev, newItems);
   },
