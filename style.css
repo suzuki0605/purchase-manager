@@ -941,10 +941,60 @@ body {
 .category-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
+  transition: background 0.1s;
+}
+
+.category-item.drag-over {
+  background: var(--bg);
+  border-top: 2px solid var(--accent);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-secondary);
+  font-size: 18px;
+  padding: 0 4px;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.drag-handle:active { cursor: grabbing; }
+
+.category-name-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-name-input,
+.category-edit-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.category-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.category-edit-btn {
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
 }
 
 .category-delete-btn {
@@ -967,7 +1017,7 @@ body {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
 }
 

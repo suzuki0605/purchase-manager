@@ -643,17 +643,137 @@ function openCategoryModal() {
 function renderCategoryModal() {
   const list = document.getElementById('categoryModalList');
   list.innerHTML = '';
-  DB.categories.forEach(cat => {
+
+  DB.categories.forEach((cat, idx) => {
     const row = document.createElement('div');
     row.className = 'category-item';
-    row.innerHTML = `<span>${cat}</span><button class="category-delete-btn" data-cat="${cat}">×</button>`;
+    row.draggable = true;
+    row.dataset.idx = idx;
+    row.innerHTML = `
+      <span class="drag-handle">⠿</span>
+      <span class="category-name-text">${cat}</span>
+      <div class="category-item-actions">
+        <button class="category-edit-btn">編集</button>
+        <button class="category-delete-btn">×</button>
+      </div>`;
+
+    // 編集
+    row.querySelector('.category-edit-btn').addEventListener('click', () => {
+      const nameEl = row.querySelector('.category-name-text');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = cat;
+      input.className = 'category-edit-input';
+      nameEl.replaceWith(input);
+      input.focus();
+      const save = () => {
+        const newVal = input.value.trim();
+        if (!newVal || newVal === cat) { renderCategoryModal(); return; }
+        if (DB.categories.includes(newVal)) { alert('すでに存在します'); renderCategoryModal(); return; }
+        const cats = DB.categories;
+        cats[idx] = newVal;
+        DB.categories = cats;
+        DB.items = DB.items.map(i => i.category === cat ? { ...i, category: newVal } : i);
+        renderCategoryModal();
+        refreshAll();
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+    });
+
+    // 削除
     row.querySelector('.category-delete-btn').addEventListener('click', () => {
       if (!confirm(`「${cat}」を削除しますか？`)) return;
       DB.categories = DB.categories.filter(c => c !== cat);
       renderCategoryModal();
       refreshAll();
     });
+
     list.appendChild(row);
+  });
+
+  setupCategoryDragDrop(list);
+}
+
+function setupCategoryDragDrop(list) {
+  let dragSrc = null;
+
+  // --- PC: HTML5 Drag ---
+  list.querySelectorAll('.category-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      dragSrc = item;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.category-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (item === dragSrc) return;
+      list.querySelectorAll('.category-item').forEach(i => i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || item === dragSrc) return;
+      const cats = DB.categories;
+      const from = Number(dragSrc.dataset.idx);
+      const to   = Number(item.dataset.idx);
+      cats.splice(to, 0, cats.splice(from, 1)[0]);
+      DB.categories = cats;
+      renderCategoryModal();
+      refreshAll();
+    });
+  });
+
+  // --- Mobile: Touch Drag ---
+  let touchDragging = null;
+  let touchClone    = null;
+  let touchOffsetY  = 0;
+
+  list.querySelectorAll('.drag-handle').forEach(handle => {
+    handle.addEventListener('touchstart', e => {
+      const item = handle.closest('.category-item');
+      touchDragging = item;
+      const rect = item.getBoundingClientRect();
+      touchOffsetY = rect.top - e.touches[0].clientY;
+      touchClone = item.cloneNode(true);
+      touchClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.85;z-index:9999;pointer-events:none;`;
+      document.body.appendChild(touchClone);
+      item.style.opacity = '0.3';
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', e => {
+      if (!touchDragging) return;
+      e.preventDefault();
+      const y = e.touches[0].clientY;
+      touchClone.style.top = (y + touchOffsetY) + 'px';
+      list.querySelectorAll('.category-item').forEach(i => {
+        if (i === touchDragging) return;
+        const r = i.getBoundingClientRect();
+        i.classList.toggle('drag-over', y >= r.top && y <= r.bottom);
+      });
+    }, { passive: false });
+
+    handle.addEventListener('touchend', () => {
+      if (!touchDragging) return;
+      const target = list.querySelector('.category-item.drag-over');
+      if (target && target !== touchDragging) {
+        const cats = DB.categories;
+        const from = Number(touchDragging.dataset.idx);
+        const to   = Number(target.dataset.idx);
+        cats.splice(to, 0, cats.splice(from, 1)[0]);
+        DB.categories = cats;
+      }
+      touchClone.remove();
+      touchDragging.style.opacity = '';
+      touchDragging = null;
+      touchClone = null;
+      renderCategoryModal();
+      refreshAll();
+    });
   });
 }
 
