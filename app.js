@@ -1,7 +1,13 @@
 // ===== Data Store =====
 const DB = {
   get items() { return JSON.parse(localStorage.getItem('pm_items') || '[]'); },
-  set items(v) { localStorage.setItem('pm_items', JSON.stringify(v)); },
+  set items(v) {
+    try {
+      localStorage.setItem('pm_items', JSON.stringify(v));
+    } catch(e) {
+      alert('保存容量が不足しています。古い商品の画像を削除するか、画像なしで登録してください。');
+    }
+  },
   get categories() {
     const saved = localStorage.getItem('pm_categories');
     return saved ? JSON.parse(saved) : ['家雑貨', '美容', '仕事関連', 'ファッション', '食品'];
@@ -1155,7 +1161,7 @@ document.getElementById('cropConfirmBtn').addEventListener('click', () => {
   const srcY    = (fy - crop.y) / crop.scale;
   const srcSize = frameSize / crop.scale;
 
-  const OUTPUT = 800;
+  const OUTPUT = 700;
   const out = document.createElement('canvas');
   out.width = OUTPUT; out.height = OUTPUT;
   const ctx = out.getContext('2d');
