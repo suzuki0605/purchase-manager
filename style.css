@@ -545,11 +545,19 @@ body {
   padding: 11px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 16px; /* iOS拡大防止：16px以上必須 */
   background: var(--surface);
   color: var(--text-primary);
   font-family: inherit;
   transition: border-color 0.15s;
+  height: 46px;
+  box-sizing: border-box;
+}
+
+input[type="date"].form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
 }
 
 .form-input:focus,
@@ -563,6 +571,7 @@ body {
   resize: none;
   height: 90px;
   line-height: 1.5;
+  font-size: 16px;
 }
 
 .form-select { appearance: none; cursor: pointer; }
@@ -596,9 +605,8 @@ body {
 
 /* Image upload */
 .img-upload-area {
-  width: 100%;
-  aspect-ratio: 16/9;
-  max-height: 180px;
+  width: 160px;
+  aspect-ratio: 1;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
   display: flex;

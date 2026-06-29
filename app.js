@@ -445,7 +445,9 @@ function buildFormHTML(item, defaultType) {
     <div class="form-field">
       <label class="form-label" id="formRatingLabel">${type === 'consideration' ? '優先度' : '使用頻度'}</label>
       <div class="stars" id="formStars" data-value="${item ? (type === 'consideration' ? item.priority || 0 : item.frequency || 0) : 0}"></div>
-    </div>`;
+    </div>
+
+    <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;border-radius:${12}px;font-size:15px;">保存</button>`;
 }
 
 function bindFormEvents(existingItem) {
@@ -826,6 +828,8 @@ document.getElementById('cropConfirmBtn').addEventListener('click', () => {
   const out = document.createElement('canvas');
   out.width = 600; out.height = 600;
   const ctx = out.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 600, 600);
   ctx.drawImage(
     document.getElementById('cropCanvas'),
     fx, fy, frameSize, frameSize,
