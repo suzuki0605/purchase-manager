@@ -759,99 +759,109 @@ body {
 .calendar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 20px 16px 8px;
+  justify-content: space-between;
+  padding: 20px 16px 12px;
+}
+
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cal-month {
   font-size: 18px;
   font-weight: 700;
-  min-width: 140px;
-  text-align: center;
 }
 
 .cal-nav {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
   font-size: 20px;
   cursor: pointer;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
-.cal-total {
-  text-align: center;
-  font-size: 13px;
-  color: var(--text-secondary);
-  padding-bottom: 16px;
-}
-
-.cal-total span {
-  font-size: 22px;
+.cal-header-total {
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-left: 8px;
 }
 
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  padding: 0 16px;
-  gap: 2px;
+  padding: 0 8px;
 }
 
 .calendar-weekdays span {
   text-align: center;
   font-size: 11px;
   color: var(--text-secondary);
-  padding: 4px 0;
-  font-weight: 600;
+  padding: 4px 0 6px;
+  font-weight: 500;
 }
+
+.calendar-weekdays .cal-sun { color: #c0392b; }
+.calendar-weekdays .cal-sat { color: #2980b9; }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  padding: 4px 16px 16px;
+  padding: 0 8px 16px;
 }
 
 .cal-day {
-  aspect-ratio: 1;
+  aspect-ratio: 0.85;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
+  justify-content: flex-start;
+  padding-top: 6px;
   cursor: default;
-  gap: 2px;
+  gap: 4px;
 }
 
-.cal-day.has-purchase {
-  background: var(--surface);
-  cursor: pointer;
-  box-shadow: var(--shadow);
-}
-
-.cal-day.has-purchase:active { transform: scale(0.95); }
+.cal-day.has-purchase { cursor: pointer; }
+.cal-day.has-purchase:active { opacity: 0.7; }
 
 .cal-day-num {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
 }
 
-.cal-day.empty .cal-day-num { color: transparent; }
+.cal-day.today .cal-day-num {
+  background: #e0e0e0;
+  font-weight: 600;
+}
+
+.cal-day.other-month .cal-day-num { color: #c0c0c0; }
+.cal-day.sunday .cal-day-num { color: #c0392b; }
+.cal-day.saturday .cal-day-num { color: #2980b9; }
+.cal-day.sunday.other-month .cal-day-num,
+.cal-day.saturday.other-month .cal-day-num { color: #ddd; }
 
 .cal-day-amount {
+  display: none;
   font-size: 9px;
   font-weight: 600;
-  color: var(--accent);
-  display: none;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 2px 4px;
+  white-space: nowrap;
 }
 
 .cal-day.has-purchase .cal-day-amount { display: block; }

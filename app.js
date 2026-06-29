@@ -831,12 +831,18 @@ function renderCalendar() {
   const grid = document.getElementById('calendarGrid');
   grid.innerHTML = '';
 
-  const firstDay = new Date(y, m, 1).getDay();
+  const today = new Date();
+  const todayY = today.getFullYear();
+  const todayM = today.getMonth();
+  const todayD = today.getDate();
+
+  const firstDay    = new Date(y, m, 1).getDay();
   const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const prevDays    = new Date(y, m, 0).getDate(); // 前月の総日数
 
   // Amount by date
   const amountByDate = {};
-  const itemsByDate = {};
+  const itemsByDate  = {};
   monthItems.forEach(i => {
     const day = parseInt(i.date.split('-')[2]);
     amountByDate[day] = (amountByDate[day] || 0) + (i.price || 0);
@@ -844,24 +850,51 @@ function renderCalendar() {
     itemsByDate[day].push(i);
   });
 
-  // Empty cells
-  for (let i = 0; i < firstDay; i++) {
+  function makeCell(dayNum, classes) {
     const cell = document.createElement('div');
-    cell.className = 'cal-day empty';
-    cell.innerHTML = '<div class="cal-day-num">-</div>';
+    cell.className = 'cal-day ' + classes.join(' ');
+    cell.innerHTML = `<div class="cal-day-num">${dayNum}</div><div class="cal-day-amount"></div>`;
+    return cell;
+  }
+
+  function dayClasses(dow, isOther) {
+    const cls = [];
+    if (isOther) cls.push('other-month');
+    if (dow === 0) cls.push('sunday');
+    if (dow === 6) cls.push('saturday');
+    return cls;
+  }
+
+  // 前月末尾
+  for (let i = 0; i < firstDay; i++) {
+    const d   = prevDays - firstDay + 1 + i;
+    const dow = i; // 0=日
+    const cell = makeCell(d, dayClasses(dow, true));
     grid.appendChild(cell);
   }
 
+  // 今月
   for (let d = 1; d <= daysInMonth; d++) {
-    const cell = document.createElement('div');
+    const dow      = new Date(y, m, d).getDay();
     const hasItems = !!amountByDate[d];
-    cell.className = 'cal-day' + (hasItems ? ' has-purchase' : '');
-    cell.innerHTML = `
-      <div class="cal-day-num">${d}</div>
-      <div class="cal-day-amount">${hasItems ? formatPrice(amountByDate[d]) : ''}</div>`;
+    const isToday  = y === todayY && m === todayM && d === todayD;
+    const cls      = dayClasses(dow, false);
+    if (hasItems) cls.push('has-purchase');
+    if (isToday)  cls.push('today');
+    const cell = makeCell(d, cls);
     if (hasItems) {
+      cell.querySelector('.cal-day-amount').textContent = formatPrice(amountByDate[d]);
       cell.addEventListener('click', () => openCalDayModal(y, m, d, itemsByDate[d]));
     }
+    grid.appendChild(cell);
+  }
+
+  // 翌月先頭（6週分になるよう埋める）
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    const dow  = (total + i - 1) % 7;
+    const cell = makeCell(i, dayClasses(dow, true));
     grid.appendChild(cell);
   }
 }

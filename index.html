@@ -66,13 +66,15 @@
     <!-- カレンダー -->
     <section class="tab-content" id="tab-calendar">
       <div class="calendar-header">
-        <button class="cal-nav" id="prevMonth">‹</button>
-        <span class="cal-month" id="calMonth"></span>
-        <button class="cal-nav" id="nextMonth">›</button>
+        <div class="cal-month-nav">
+          <button class="cal-nav" id="prevMonth">‹</button>
+          <span class="cal-month" id="calMonth"></span>
+          <button class="cal-nav" id="nextMonth">›</button>
+        </div>
+        <div class="cal-header-total" id="calTotalAmount">¥0</div>
       </div>
-      <div class="cal-total">月合計 <span id="calTotalAmount">¥0</span></div>
       <div class="calendar-weekdays">
-        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        <span class="cal-sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="cal-sat">土</span>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
     </section>
