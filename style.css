@@ -819,7 +819,7 @@ body {
 }
 
 .cal-day {
-  aspect-ratio: 0.85;
+  aspect-ratio: 0.7;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -855,8 +855,22 @@ body {
 .cal-day.other-month .cal-day-num { color: #c0c0c0; }
 .cal-day.sunday .cal-day-num { color: #c0392b; }
 .cal-day.saturday .cal-day-num { color: #2980b9; }
+.cal-day.holiday .cal-day-num { color: #c0392b; }
 .cal-day.sunday.other-month .cal-day-num,
-.cal-day.saturday.other-month .cal-day-num { color: #ddd; }
+.cal-day.saturday.other-month .cal-day-num,
+.cal-day.holiday.other-month .cal-day-num { color: #ddd; }
+
+.cal-day-holiday {
+  font-size: 8px;
+  color: #c0392b;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: none;
+}
+.cal-day.holiday .cal-day-holiday { display: block; }
 
 .cal-day-amount {
   display: none;

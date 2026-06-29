@@ -813,6 +813,70 @@ document.getElementById('categoryModalOverlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
 });
 
+// ===== Japanese Holidays =====
+const JP_HOLIDAYS = {
+  // 2025
+  '2025-01-01': '元日',
+  '2025-01-13': '成人の日',
+  '2025-02-11': '建国記念の日',
+  '2025-02-23': '天皇誕生日',
+  '2025-02-24': '振替休日',
+  '2025-03-20': '春分の日',
+  '2025-04-29': '昭和の日',
+  '2025-05-03': '憲法記念日',
+  '2025-05-04': 'みどりの日',
+  '2025-05-05': 'こどもの日',
+  '2025-05-06': '振替休日',
+  '2025-07-21': '海の日',
+  '2025-08-11': '山の日',
+  '2025-09-15': '敬老の日',
+  '2025-09-23': '秋分の日',
+  '2025-10-13': 'スポーツの日',
+  '2025-11-03': '文化の日',
+  '2025-11-23': '勤労感謝の日',
+  '2025-11-24': '振替休日',
+  // 2026
+  '2026-01-01': '元日',
+  '2026-01-12': '成人の日',
+  '2026-02-11': '建国記念の日',
+  '2026-02-23': '天皇誕生日',
+  '2026-03-20': '春分の日',
+  '2026-04-29': '昭和の日',
+  '2026-05-03': '憲法記念日',
+  '2026-05-04': 'みどりの日',
+  '2026-05-05': 'こどもの日',
+  '2026-05-06': '振替休日',
+  '2026-07-20': '海の日',
+  '2026-08-11': '山の日',
+  '2026-09-21': '敬老の日',
+  '2026-09-23': '秋分の日',
+  '2026-10-12': 'スポーツの日',
+  '2026-11-03': '文化の日',
+  '2026-11-23': '勤労感謝の日',
+  // 2027
+  '2027-01-01': '元日',
+  '2027-01-11': '成人の日',
+  '2027-02-11': '建国記念の日',
+  '2027-02-23': '天皇誕生日',
+  '2027-03-21': '春分の日',
+  '2027-04-29': '昭和の日',
+  '2027-05-03': '憲法記念日',
+  '2027-05-04': 'みどりの日',
+  '2027-05-05': 'こどもの日',
+  '2027-07-19': '海の日',
+  '2027-08-11': '山の日',
+  '2027-09-20': '敬老の日',
+  '2027-09-23': '秋分の日',
+  '2027-10-11': 'スポーツの日',
+  '2027-11-03': '文化の日',
+  '2027-11-23': '勤労感謝の日',
+};
+
+function getHoliday(y, m, d) {
+  const key = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return JP_HOLIDAYS[key] || null;
+}
+
 // ===== Calendar =====
 function renderCalendar() {
   const { calYear: y, calMonth: m } = state;
@@ -850,38 +914,40 @@ function renderCalendar() {
     itemsByDate[day].push(i);
   });
 
-  function makeCell(dayNum, classes) {
+  function makeCell(dayNum, classes, holidayName) {
     const cell = document.createElement('div');
     cell.className = 'cal-day ' + classes.join(' ');
-    cell.innerHTML = `<div class="cal-day-num">${dayNum}</div><div class="cal-day-amount"></div>`;
+    cell.innerHTML = `<div class="cal-day-num">${dayNum}</div><div class="cal-day-holiday">${holidayName || ''}</div><div class="cal-day-amount"></div>`;
     return cell;
   }
 
-  function dayClasses(dow, isOther) {
+  function dayClasses(dow, isOther, holidayName) {
     const cls = [];
     if (isOther) cls.push('other-month');
     if (dow === 0) cls.push('sunday');
     if (dow === 6) cls.push('saturday');
+    if (holidayName && !isOther) cls.push('holiday');
     return cls;
   }
 
   // 前月末尾
   for (let i = 0; i < firstDay; i++) {
     const d   = prevDays - firstDay + 1 + i;
-    const dow = i; // 0=日
-    const cell = makeCell(d, dayClasses(dow, true));
+    const dow = i;
+    const cell = makeCell(d, dayClasses(dow, true), null);
     grid.appendChild(cell);
   }
 
   // 今月
   for (let d = 1; d <= daysInMonth; d++) {
-    const dow      = new Date(y, m, d).getDay();
-    const hasItems = !!amountByDate[d];
-    const isToday  = y === todayY && m === todayM && d === todayD;
-    const cls      = dayClasses(dow, false);
+    const dow         = new Date(y, m, d).getDay();
+    const hasItems    = !!amountByDate[d];
+    const isToday     = y === todayY && m === todayM && d === todayD;
+    const holidayName = getHoliday(y, m, d);
+    const cls         = dayClasses(dow, false, holidayName);
     if (hasItems) cls.push('has-purchase');
     if (isToday)  cls.push('today');
-    const cell = makeCell(d, cls);
+    const cell = makeCell(d, cls, holidayName);
     if (hasItems) {
       cell.querySelector('.cal-day-amount').textContent = formatPrice(amountByDate[d]);
       cell.addEventListener('click', () => openCalDayModal(y, m, d, itemsByDate[d]));
@@ -894,7 +960,7 @@ function renderCalendar() {
   const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let i = 1; i <= remaining; i++) {
     const dow  = (total + i - 1) % 7;
-    const cell = makeCell(i, dayClasses(dow, true));
+    const cell = makeCell(i, dayClasses(dow, true, null), null);
     grid.appendChild(cell);
   }
 }
