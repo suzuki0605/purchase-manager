@@ -560,6 +560,10 @@ input[type="date"].form-input {
   text-align: left;
 }
 
+.img-upload-area.has-image {
+  border: none;
+}
+
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {

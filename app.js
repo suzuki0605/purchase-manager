@@ -447,7 +447,7 @@ function buildFormHTML(item, defaultType) {
       <div class="stars" id="formStars" data-value="${item ? (type === 'consideration' ? item.priority || 0 : item.frequency || 0) : 0}"></div>
     </div>
 
-    <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;border-radius:${12}px;font-size:15px;">保存</button>`;
+    <button class="save-btn" id="formSaveBtn" style="width:100%;padding:15px;margin-top:8px;margin-bottom:32px;border-radius:12px;font-size:15px;">保存</button>`;
 }
 
 function bindFormEvents(existingItem) {
@@ -464,22 +464,15 @@ function bindFormEvents(existingItem) {
     reader.onload = ev => {
       openCropModal(ev.target.result, croppedData => {
         imageData = croppedData;
-        document.getElementById('imgUploadArea').innerHTML =
-          `<img src="${imageData}" alt=""><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
-        document.getElementById('imgInput').addEventListener('change', e2 => {
-          const f2 = e2.target.files[0];
-          if (!f2) return;
-          const r2 = new FileReader();
-          r2.onload = ev2 => openCropModal(ev2.target.result, d => {
-            imageData = d;
-            document.getElementById('imgUploadArea').innerHTML =
-              `<img src="${imageData}" alt=""><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
-          });
-          r2.readAsDataURL(f2);
-        });
+        setUploadAreaImage(imageData);
       });
     };
     reader.readAsDataURL(file);
+  });
+
+  // 再トリミング時にimageDataを更新
+  document.getElementById('imgUploadArea').addEventListener('imageUpdated', e => {
+    imageData = e.detail;
   });
 
   // Type toggle
@@ -708,6 +701,23 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   renderCalendar();
 });
 
+function setUploadAreaImage(src) {
+  const area = document.getElementById('imgUploadArea');
+  area.classList.add('has-image');
+  area.innerHTML = `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;"><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
+  document.getElementById('imgInput').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => openCropModal(ev.target.result, d => {
+      // imageData is in closure of bindFormEvents - update via event
+      area.dispatchEvent(new CustomEvent('imageUpdated', { detail: d, bubbles: true }));
+      setUploadAreaImage(d);
+    });
+    r.readAsDataURL(f);
+  });
+}
+
 // ===== Crop Modal (Instagram style) =====
 let cropCallback = null;
 const crop = {
@@ -791,9 +801,15 @@ cropStage.addEventListener('touchmove', e => {
       e.touches[0].clientX - e.touches[1].clientX,
       e.touches[0].clientY - e.touches[1].clientY
     );
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     const ratio = dist / crop.pinchDist;
     const minScale = Math.max(crop.frameSize / crop.img.width, crop.frameSize / crop.img.height);
-    crop.scale = Math.max(minScale, Math.min(crop.scale * ratio, minScale * 6));
+    const oldScale = crop.scale;
+    const newScale = Math.max(minScale, Math.min(oldScale * ratio, minScale * 6));
+    crop.x = midX - (midX - crop.x) * (newScale / oldScale);
+    crop.y = midY - (midY - crop.y) * (newScale / oldScale);
+    crop.scale = newScale;
     crop.pinchDist = dist;
     drawCrop();
   }
