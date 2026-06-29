@@ -558,25 +558,20 @@ function bindFormEvents(existingItem, defaultType) {
     setTimeout(() => suggestionBox.classList.add('hidden'), 150);
   });
 
-  // フォーカス時に入力欄をキーボードの上に表示
-  const formBody = document.getElementById('formBody');
-  let savedScrollTop = 0;
-  formBody.addEventListener('focusin', e => {
-    if (!e.target.matches('input, textarea, select')) return;
-    setTimeout(() => {
-      savedScrollTop = formBody.scrollTop;
-      const el    = e.target;
-      const elTop = el.getBoundingClientRect().top;
-      const targetY = window.innerHeight * 0.35; // 画面上から35%の位置
-      if (elTop > targetY) {
-        formBody.scrollTop += elTop - targetY;
-      }
-    }, 350); // キーボードが出きるのを待つ
-  }, true);
-  formBody.addEventListener('focusout', e => {
-    if (!e.target.matches('input, textarea, select')) return;
-    setTimeout(() => { formBody.scrollTop = savedScrollTop; }, 50);
-  }, true);
+  // visualViewport でキーボード高さ分だけパネルを縮める
+  const formPanel = document.getElementById('formPanel');
+  function onViewportResize() {
+    const keyboardH = window.innerHeight - window.visualViewport.height;
+    formPanel.style.paddingBottom = keyboardH > 0 ? keyboardH + 'px' : '';
+  }
+  window.visualViewport.addEventListener('resize', onViewportResize);
+  // パネルを閉じたときにリスナー解除・リセット
+  formPanel.addEventListener('transitionend', () => {
+    if (!formPanel.classList.contains('open')) {
+      formPanel.style.paddingBottom = '';
+      window.visualViewport.removeEventListener('resize', onViewportResize);
+    }
+  }, { once: true });
 
   // Type toggle
   body.querySelectorAll('.type-btn').forEach(btn => {
