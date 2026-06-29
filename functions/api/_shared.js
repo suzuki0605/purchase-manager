@@ -1,5 +1,5 @@
 export async function initSchema(db) {
-  await db.exec(`
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS items (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -15,12 +15,14 @@ export async function initSchema(db) {
       frequency INTEGER,
       usage_logs TEXT,
       created_at TEXT DEFAULT (datetime('now'))
-    );
+    )
+  `).run();
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS categories (
       position INTEGER PRIMARY KEY,
       name TEXT NOT NULL
-    );
-  `);
+    )
+  `).run();
 }
 
 export function itemFromRow(row) {
