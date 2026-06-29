@@ -1,19 +1,75 @@
-// ===== Data Store =====
-const DB = {
-  get items() { return JSON.parse(localStorage.getItem('pm_items') || '[]'); },
-  set items(v) {
-    try {
-      localStorage.setItem('pm_items', JSON.stringify(v));
-    } catch(e) {
-      alert('保存容量が不足しています。古い商品の画像を削除するか、画像なしで登録してください。');
-    }
-  },
-  get categories() {
-    const saved = localStorage.getItem('pm_categories');
-    return saved ? JSON.parse(saved) : ['家雑貨', '美容', '仕事関連', 'ファッション', '食品'];
-  },
-  set categories(v) { localStorage.setItem('pm_categories', JSON.stringify(v)); },
+// ===== API Client =====
+async function apiFetch(path, options = {}) {
+  const res = await fetch('/api/' + path, options);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+const api = {
+  getItems:       ()         => apiFetch('items'),
+  postItem:       item       => apiFetch('items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }),
+  putItem:        (id, item) => apiFetch(`items/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }),
+  deleteItem:     id         => apiFetch(`items/${id}`, { method: 'DELETE' }),
+  getCategories:  ()         => apiFetch('categories'),
+  putCategories:  cats       => apiFetch('categories', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cats) }),
+  uploadImage:    (base64, type) => apiFetch('images', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64, type }) }),
+  migrate:        data       => apiFetch('migrate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 };
+
+// ===== Data Store (in-memory + API sync) =====
+let _items = [];
+let _categories = ['家雑貨', '美容', '仕事関連', 'ファッション', '食品'];
+let _initialized = false;
+
+function getImageSrc(item) {
+  if (item.image_key) return `/api/images/${item.image_key}`;
+  if (item.image) return item.image; // localStorage移行前のbase64
+  return null;
+}
+
+const DB = {
+  get items() { return _items; },
+  set items(newItems) {
+    if (!_initialized) { _items = newItems; return; }
+    const prev = _items;
+    _items = newItems;
+    syncItemChanges(prev, newItems);
+  },
+  get categories() { return _categories; },
+  set categories(v) {
+    _categories = v;
+    if (_initialized) api.putCategories(v).catch(console.error);
+  },
+};
+
+async function syncItemChanges(prev, next) {
+  const prevMap = new Map(prev.map(i => [i.id, i]));
+  const nextMap = new Map(next.map(i => [i.id, i]));
+  for (const [id] of prevMap) {
+    if (!nextMap.has(id)) api.deleteItem(id).catch(console.error);
+  }
+  for (const [id, item] of nextMap) {
+    if (!prevMap.has(id)) {
+      await syncNewItem(item);
+    } else if (JSON.stringify(prevMap.get(id)) !== JSON.stringify(item)) {
+      api.putItem(id, item).catch(console.error);
+    }
+  }
+}
+
+async function syncNewItem(item) {
+  let apiItem = { ...item };
+  if (item.image && item.image.startsWith('data:')) {
+    try {
+      const match = item.image.match(/^data:(image\/\w+);base64,/);
+      const mimeType = match ? match[1] : 'image/jpeg';
+      const { key } = await api.uploadImage(item.image, mimeType);
+      apiItem = { ...apiItem, image_key: key, image: undefined };
+      const idx = _items.findIndex(i => i.id === item.id);
+      if (idx !== -1) _items[idx] = { ..._items[idx], image_key: key, image: undefined };
+    } catch (e) { console.error('画像アップロード失敗:', e); }
+  }
+  api.postItem(apiItem).catch(console.error);
+}
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -114,8 +170,9 @@ function renderGrid(tabKey) {
   items.forEach(item => {
     const card = document.createElement('div');
     card.className = 'item-card';
-    const imgHtml = item.image
-      ? `<img class="card-img" src="${item.image}" alt="">`
+    const _imgSrc = getImageSrc(item);
+    const imgHtml = _imgSrc
+      ? `<img class="card-img" src="${_imgSrc}" alt="">`
       : `<div class="card-img-placeholder">📦</div>`;
     card.innerHTML = `
       <div class="card-img-wrapper">
@@ -255,8 +312,9 @@ function openDetail(id) {
 }
 
 function buildDetailHTML(item) {
-  const imgInner = item.image
-    ? `<img class="detail-img" src="${item.image}" alt="">`
+  const _detailImgSrc = getImageSrc(item);
+  const imgInner = _detailImgSrc
+    ? `<img class="detail-img" src="${_detailImgSrc}" alt="">`
     : `<div class="detail-img-placeholder">📦</div>`;
 
   const isConsideration = item.type === 'consideration';
@@ -433,7 +491,7 @@ function buildFormHTML(item, defaultType) {
     <div class="form-field">
       <label class="form-label">画像</label>
       <div class="img-upload-area" id="imgUploadArea">
-        ${item && item.image ? `<img src="${item.image}" alt="">` : `<div class="img-upload-label"><div class="img-upload-icon">📷</div>タップして画像を選択</div>`}
+        ${item && getImageSrc(item) ? `<img src="${getImageSrc(item)}" alt="">` : `<div class="img-upload-label"><div class="img-upload-icon">📷</div>タップして画像を選択</div>`}
         <input type="file" accept="image/*" class="img-upload-input" id="imgInput">
       </div>
     </div>
@@ -1254,4 +1312,32 @@ document.getElementById('cropCancelBtn').addEventListener('click', () => {
 })();
 
 // ===== Init =====
-refreshAll();
+async function initApp() {
+  try {
+    // localStorageにデータがあれば移行
+    const lsItems = JSON.parse(localStorage.getItem('pm_items') || '[]');
+    const lsCats  = localStorage.getItem('pm_categories');
+    if (lsItems.length > 0) {
+      await api.migrate({
+        items: lsItems,
+        categories: lsCats ? JSON.parse(lsCats) : [],
+      });
+      localStorage.removeItem('pm_items');
+      localStorage.removeItem('pm_categories');
+    }
+
+    // APIからデータ取得
+    const [items, cats] = await Promise.all([api.getItems(), api.getCategories()]);
+    _items = items;
+    _categories = cats;
+  } catch (e) {
+    console.warn('API接続失敗、localStorageで動作:', e);
+    _items = JSON.parse(localStorage.getItem('pm_items') || '[]');
+    const saved = localStorage.getItem('pm_categories');
+    _categories = saved ? JSON.parse(saved) : ['家雑貨', '美容', '仕事関連', 'ファッション', '食品'];
+  }
+  _initialized = true;
+  refreshAll();
+}
+
+initApp();
