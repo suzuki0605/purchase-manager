@@ -454,16 +454,28 @@ function bindFormEvents(existingItem) {
   let currentType = existingItem ? existingItem.type : 'consideration';
   let starValue = existingItem ? (currentType === 'consideration' ? existingItem.priority || 0 : existingItem.frequency || 0) : 0;
 
-  // Image upload
+  // Image upload → crop
   document.getElementById('imgInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      imageData = ev.target.result;
-      document.getElementById('imgUploadArea').innerHTML =
-        `<img src="${imageData}" alt=""><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
-      document.getElementById('imgInput').addEventListener('change', arguments.callee);
+      openCropModal(ev.target.result, croppedData => {
+        imageData = croppedData;
+        document.getElementById('imgUploadArea').innerHTML =
+          `<img src="${imageData}" alt=""><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
+        document.getElementById('imgInput').addEventListener('change', e2 => {
+          const f2 = e2.target.files[0];
+          if (!f2) return;
+          const r2 = new FileReader();
+          r2.onload = ev2 => openCropModal(ev2.target.result, d => {
+            imageData = d;
+            document.getElementById('imgUploadArea').innerHTML =
+              `<img src="${imageData}" alt=""><input type="file" accept="image/*" class="img-upload-input" id="imgInput">`;
+          });
+          r2.readAsDataURL(f2);
+        });
+      });
     };
     reader.readAsDataURL(file);
   });
@@ -692,6 +704,55 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   if (state.calMonth === 11) { state.calMonth = 0; state.calYear++; }
   else state.calMonth++;
   renderCalendar();
+});
+
+// ===== Crop Modal =====
+let cropperInstance = null;
+let cropCallback = null;
+
+function openCropModal(imageSrc, callback) {
+  cropCallback = callback;
+  const overlay = document.getElementById('cropModalOverlay');
+  const img = document.getElementById('cropImage');
+  img.src = imageSrc;
+  overlay.classList.remove('hidden');
+
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+  cropperInstance = new Cropper(img, {
+    aspectRatio: 1,
+    viewMode: 1,
+    autoCropArea: 0.9,
+  });
+
+  // ratio buttons
+  document.querySelectorAll('.ratio-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.ratio === '1') btn.classList.add('active');
+  });
+}
+
+document.querySelectorAll('.ratio-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const ratio = btn.dataset.ratio === '0' ? NaN : Number(btn.dataset.ratio);
+    if (cropperInstance) cropperInstance.setAspectRatio(ratio);
+  });
+});
+
+document.getElementById('cropConfirmBtn').addEventListener('click', () => {
+  if (!cropperInstance) return;
+  const canvas = cropperInstance.getCroppedCanvas({ maxWidth: 800, maxHeight: 800 });
+  const data = canvas.toDataURL('image/jpeg', 0.85);
+  cropperInstance.destroy();
+  cropperInstance = null;
+  document.getElementById('cropModalOverlay').classList.add('hidden');
+  if (cropCallback) cropCallback(data);
+});
+
+document.getElementById('cropCancelBtn').addEventListener('click', () => {
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+  document.getElementById('cropModalOverlay').classList.add('hidden');
 });
 
 // ===== Init =====

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>購入管理</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 </head>
 <body>
 
@@ -150,6 +151,25 @@
     </div>
   </div>
 
+  <!-- トリミングモーダル -->
+  <div class="modal-overlay hidden" id="cropModalOverlay">
+    <div class="crop-modal">
+      <div class="crop-modal-header">
+        <button class="btn-secondary" id="cropCancelBtn">キャンセル</button>
+        <span class="crop-modal-title">トリミング</span>
+        <button class="btn-primary" id="cropConfirmBtn">決定</button>
+      </div>
+      <div class="crop-container">
+        <img id="cropImage" src="" alt="">
+      </div>
+      <div class="crop-ratio-btns">
+        <button class="ratio-btn active" data-ratio="1">1:1</button>
+        <button class="ratio-btn" data-ratio="0">フリー</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
