@@ -264,7 +264,7 @@ function buildDetailHTML(item) {
     <div class="detail-img-wrapper">
       ${imgInner}
       ${item.category ? `<span class="detail-category-overlay">${item.category}</span>` : ''}
-    </div>`;
+    </div>
     <div class="detail-seller">${item.seller || ''}</div>
     <div class="detail-name">${item.name || ''}</div>
     <div class="detail-price">${formatPrice(item.price)}</div>
