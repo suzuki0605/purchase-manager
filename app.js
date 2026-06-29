@@ -558,12 +558,20 @@ function bindFormEvents(existingItem, defaultType) {
     setTimeout(() => suggestionBox.classList.add('hidden'), 150);
   });
 
-  // キーボード確定後のスクロール位置保持
+  // フォーカス時に入力欄をキーボードの上に表示
   const formBody = document.getElementById('formBody');
   let savedScrollTop = 0;
   formBody.addEventListener('focusin', e => {
     if (!e.target.matches('input, textarea, select')) return;
-    setTimeout(() => { savedScrollTop = formBody.scrollTop; }, 400);
+    setTimeout(() => {
+      savedScrollTop = formBody.scrollTop;
+      const el    = e.target;
+      const elTop = el.getBoundingClientRect().top;
+      const targetY = window.innerHeight * 0.35; // 画面上から35%の位置
+      if (elTop > targetY) {
+        formBody.scrollTop += elTop - targetY;
+      }
+    }, 350); // キーボードが出きるのを待つ
   }, true);
   formBody.addEventListener('focusout', e => {
     if (!e.target.matches('input, textarea, select')) return;
