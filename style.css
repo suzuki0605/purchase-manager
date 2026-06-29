@@ -26,31 +26,13 @@ body {
   padding-bottom: 80px;
 }
 
-/* ===== Header ===== */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 20px 0;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding-bottom: 12px;
-  color: var(--text-primary);
-}
-
 /* ===== Tab Nav ===== */
 .tab-nav {
   display: flex;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 53px;
+  top: 0;
   z-index: 99;
 }
 
@@ -88,6 +70,7 @@ body {
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 12px;
+  padding-right: 16px;
   scrollbar-width: none;
 }
 .category-chips::-webkit-scrollbar { display: none; }
@@ -554,10 +537,23 @@ body {
   box-sizing: border-box;
 }
 
-input[type="date"].form-input {
-  appearance: none;
-  -webkit-appearance: none;
-  text-align: left;
+/* Date wrapper - hide native iOS date UI */
+.form-date-wrapper {
+  position: relative;
+}
+.date-display {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.date-hidden-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .img-upload-area.has-image {

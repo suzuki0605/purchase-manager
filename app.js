@@ -419,7 +419,7 @@ function buildFormHTML(item, defaultType) {
 
     <div class="form-field">
       <label class="form-label" id="formSellerLabel">${type === 'consideration' ? '販売元' : '購入元'}</label>
-      <input type="text" class="form-input" id="formSeller" placeholder="例：Amazon、無印良品" value="${item ? item.seller || '' : ''}">
+      <input type="text" class="form-input" id="formSeller" list="sellerDatalist" placeholder="例：Amazon、無印良品" value="${item ? item.seller || '' : ''}" autocomplete="off">
     </div>
 
     <div class="form-field">
@@ -434,7 +434,10 @@ function buildFormHTML(item, defaultType) {
 
     <div class="form-field">
       <label class="form-label" id="formDateLabel">${type === 'consideration' ? '追加日' : '購入日'}</label>
-      <input type="date" class="form-input" id="formDate" value="${item ? item.date || '' : new Date().toISOString().slice(0, 10)}">
+      <div class="form-date-wrapper">
+        <div class="form-input date-display" id="formDateDisplay">${(item && item.date ? item.date : new Date().toISOString().slice(0, 10)).replace(/-/g, '/')}</div>
+        <input type="date" id="formDate" class="date-hidden-input" value="${item ? item.date || new Date().toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)}">
+      </div>
     </div>
 
     <div class="form-field" id="formReasonField">
@@ -474,6 +477,29 @@ function bindFormEvents(existingItem) {
   document.getElementById('imgUploadArea').addEventListener('imageUpdated', e => {
     imageData = e.detail;
   });
+
+  // 日付表示の同期
+  document.getElementById('formDate').addEventListener('change', e => {
+    const val = e.target.value;
+    document.getElementById('formDateDisplay').textContent = val ? val.replace(/-/g, '/') : '日付を選択';
+  });
+
+  // 販売元サジェスト（過去の登録から）
+  const datalist = document.getElementById('sellerDatalist');
+  const sellers = [...new Set(DB.items.map(i => i.seller).filter(Boolean))];
+  datalist.innerHTML = sellers.map(s => `<option value="${s}">`).join('');
+
+  // キーボード確定後のスクロール位置保持
+  const formBody = document.getElementById('formBody');
+  let savedScrollTop = 0;
+  formBody.addEventListener('focusin', e => {
+    if (!e.target.matches('input, textarea, select')) return;
+    setTimeout(() => { savedScrollTop = formBody.scrollTop; }, 400);
+  }, true);
+  formBody.addEventListener('focusout', e => {
+    if (!e.target.matches('input, textarea, select')) return;
+    setTimeout(() => { formBody.scrollTop = savedScrollTop; }, 50);
+  }, true);
 
   // Type toggle
   body.querySelectorAll('.type-btn').forEach(btn => {
